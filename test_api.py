@@ -1,79 +1,95 @@
-import os
-import json
 import requests
+import json
+import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# OpenRouter API configuration
-API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+# Load API key from environment
+API_KEY = os.environ.get("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "anthropic/claude-3-sonnet-20240229"  # Amazon Bedrock model via OpenRouter
 
-def test_api_direct():
-    """Test calling the OpenRouter API directly"""
+def get_api_key():
+    """Get API key from environment or prompt user"""
+    global API_KEY
+    if API_KEY:
+        return API_KEY
     
-    # Define example query
-    system_message = "You are AgriGuardian, an AI agricultural assistant for farmers."
-    user_message = """
-    FARMER QUESTION: Why are my tomato leaves turning yellow?
+    # Prompt user for API key
+    print("\n===== OpenRouter API Key Required =====")
+    print("To use AgriGuardian, you need an OpenRouter API key with access to Amazon Bedrock models.")
+    print("Get your key at: https://openrouter.ai/keys")
+    api_key = input("Enter your OpenRouter API key: ").strip()
     
-    CURRENT FARM CONDITIONS:
-    - Temperature: 32.5°C
-    - Humidity: 65.0%
-    - Soil Moisture: 15.3%
-    - Light Level: 8500 Lux
-    - Rainfall (Last 24h): 0mm
+    if api_key:
+        # Save to environment variable for current session
+        API_KEY = api_key
+        os.environ["OPENROUTER_API_KEY"] = api_key
+        
+        # Ask if user wants to save to .env file
+        save_to_env = input("Save this API key to .env file for future use? (y/n): ").strip().lower()
+        if save_to_env == 'y':
+            try:
+                with open('.env', 'w') as f:
+                    f.write(f"OPENROUTER_API_KEY={api_key}\n")
+                print("API key saved to .env file.")
+            except Exception as e:
+                print(f"Error saving API key to .env file: {e}")
     
-    Please provide the most accurate and practical advice based on this information.
-    """
+    return API_KEY
+
+def test_api():
+    """Test the OpenRouter API with a simple query"""
+    # Ensure we have an API key
+    api_key = get_api_key()
+    if not api_key:
+        print("Error: No API key provided. Please provide your OpenRouter API key.")
+        return
     
-    # Set up API request
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://agriguardian-app.com",
+        "X-Title": "AgriGuardian"
     }
     
     data = {
         "model": MODEL,
         "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": "Hello, are you working?"}
         ]
     }
     
-    # Make API request
-    print("Sending request to OpenRouter API...")
+    print("Testing OpenRouter API connection...")
+    print(f"Using model: {MODEL}")
+    
     try:
-        response = requests.post(API_URL, headers=headers, json=data)
-        response.raise_for_status()
+        response = requests.post(
+            url=API_URL,
+            headers=headers,
+            json=data,
+            timeout=30
+        )
         
-        # Parse and print response
-        result = response.json()
-        if "choices" in result and len(result["choices"]) > 0:
-            answer = result["choices"][0]["message"]["content"].strip()
-            print("\n=== AI RESPONSE ===")
-            print(answer)
-            print("\n=================")
+        print(f"Status code: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            if "choices" in result and len(result["choices"]) > 0:
+                message = result["choices"][0]["message"]["content"].strip()
+                print("Success! API response:")
+                print(message[:100] + "..." if len(message) > 100 else message)
+            else:
+                print("Error: Unexpected response format")
+                print(result)
         else:
-            print("Error: Unexpected API response format")
-            print(result)
+            print("Error response:")
+            print(response.text)
             
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(e.response.text)
     except Exception as e:
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
-    print("🌱 AgriGuardian - API Test")
-    print("This script tests direct API communication with OpenRouter")
-    print("Note: This will count as 1 of your 50 daily requests\n")
-    
-    proceed = input("Do you want to proceed with the test? (y/n): ")
-    if proceed.lower() == 'y':
-        test_api_direct()
-    else:
-        print("Test cancelled") 
+    test_api() 

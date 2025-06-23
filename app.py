@@ -12,15 +12,23 @@ import pandas as pd
 load_dotenv()
 
 # OpenRouter API configuration
-API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "anthropic/claude-3-sonnet-20240229"  # Amazon Bedrock model via OpenRouter
 
 # Initialize session state variables
 if "request_count" not in st.session_state:
     st.session_state.request_count = 0
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "api_key" not in st.session_state:
+    st.session_state.api_key = API_KEY
+
+def get_api_key():
+    """Get API key from session state or prompt user"""
+    if st.session_state.api_key:
+        return st.session_state.api_key
+    return None
 
 def simulate_iot_data():
     """Simulate IoT sensor data that would come from farm sensors"""
@@ -60,8 +68,13 @@ def construct_prompt(user_question, sensor_data):
     
     return system_prompt, user_prompt
 
-def ask_deepseek(user_question, sensor_data=None):
-    """Send a prompt to the DeepSeek model via OpenRouter API"""
+def ask_ai(user_question, sensor_data=None):
+    """Send a prompt to the AI model via OpenRouter API"""
+    
+    # Ensure we have an API key
+    api_key = get_api_key()
+    if not api_key:
+        return "Error: No API key provided. Please enter your OpenRouter API key in the sidebar."
     
     if sensor_data is None:
         sensor_data = simulate_iot_data()
@@ -69,7 +82,7 @@ def ask_deepseek(user_question, sensor_data=None):
     system_prompt, user_prompt = construct_prompt(user_question, sensor_data)
     
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
@@ -93,7 +106,9 @@ def ask_deepseek(user_question, sensor_data=None):
                 return "Error: Unexpected response format from API."
                 
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 429:
+        if e.response.status_code == 401:
+            return "Error: Invalid API key. Please check your OpenRouter API key in the sidebar."
+        elif e.response.status_code == 429:
             return "Daily quota exceeded. Please try again tomorrow."
         return f"API Error: {str(e)}"
     except Exception as e:
@@ -126,6 +141,28 @@ def main():
         st.title("🌱 AgriGuardian")
         st.subheader("AI Farming Assistant")
         st.write("Ask any farming or agriculture question, and get AI-powered advice based on your farm's conditions.")
+        
+        # API Key input
+        st.divider()
+        st.subheader("OpenRouter API Key")
+        api_key_input = st.text_input(
+            "Enter your OpenRouter API key",
+            type="password",
+            value=st.session_state.api_key if st.session_state.api_key else "",
+            help="Get your API key at https://openrouter.ai/keys"
+        )
+        
+        if api_key_input:
+            st.session_state.api_key = api_key_input
+            # Option to save to .env file
+            if st.button("Save API Key to .env file"):
+                try:
+                    with open('.env', 'w') as f:
+                        f.write(f"OPENROUTER_API_KEY={api_key_input}\n")
+                    st.success("API key saved to .env file!")
+                except Exception as e:
+                    st.error(f"Error saving API key: {e}")
+        
         st.divider()
         st.write(f"**API Usage:** {st.session_state.request_count}/50 daily limit")
         
@@ -176,6 +213,10 @@ def main():
         color='Metric'
     )
     
+    # Check if API key is provided
+    if not get_api_key():
+        st.warning("⚠️ Please enter your OpenRouter API key in the sidebar to use the chat functionality.")
+    
     # Chat history display
     st.subheader("💬 Conversation")
     for message in st.session_state.chat_history:
@@ -185,7 +226,7 @@ def main():
             st.chat_message("assistant", avatar="🌱").write(message["content"])
     
     # Chat input
-    user_input = st.chat_input("Type your farming question here...")
+    user_input = st.chat_input("Type your farming question here...", disabled=not get_api_key())
     if user_input:
         # Add user message to chat history
         st.session_state.chat_history.append({"role": "user", "content": user_input})
@@ -194,7 +235,7 @@ def main():
         st.chat_message("user", avatar="👨‍🌾").write(user_input)
         
         # Get AI response
-        response = ask_deepseek(user_input, st.session_state.sensor_data)
+        response = ask_ai(user_input, st.session_state.sensor_data)
         
         # Add AI response to chat history
         st.session_state.chat_history.append({"role": "assistant", "content": response})

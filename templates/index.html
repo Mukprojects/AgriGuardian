@@ -4,322 +4,521 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgriGuardian - AI Farming Assistant</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f5f5f5;
-            padding-top: 1rem;
+            background-color: #f0f4f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-bottom: 70px;
         }
-        .header {
-            background-color: #4CAF50;
+        
+        .navbar {
+            background-color: #3c8d3c;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: white !important;
+        }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
+        .chat-container {
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .chat-header {
+            background-color: #4e994e;
             color: white;
-            padding: 1rem 0;
-            border-radius: 10px;
-            margin-bottom: 2rem;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 15px 20px;
         }
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 1rem;
-        }
+        
         .chat-area {
-            height: 400px;
+            height: 450px;
             overflow-y: auto;
-            padding: 1rem;
-            background-color: #ffffff;
-            border-radius: 10px;
+            padding: 20px;
+            background-color: #fafafa;
         }
-        .sensor-card {
-            background-color: #e8f5e9;
-            border-left: 5px solid #4CAF50;
-        }
-        .user-message {
-            background-color: #e3f2fd;
-            border-radius: 10px;
-            padding: 0.5rem 1rem;
-            margin-bottom: 1rem;
-            max-width: 80%;
-            margin-left: auto;
-        }
-        .bot-message {
-            background-color: #f1f1f1;
-            border-radius: 10px;
-            padding: 0.5rem 1rem;
-            margin-bottom: 1rem;
-            max-width: 80%;
-        }
-        .form-control:focus, .btn:focus {
-            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
-            border-color: #4CAF50;
-        }
-        .btn-primary {
-            background-color: #4CAF50;
-            border-color: #4CAF50;
-        }
-        .btn-primary:hover {
-            background-color: #388e3c;
-            border-color: #388e3c;
-        }
-        .sensor-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        .chart-container {
-            height: 200px;
-            width: 100%;
-        }
-        .logo {
-            max-height: 60px;
-        }
-        .farmer-avatar {
-            width: 40px;
-            height: 40px;
-            background-color: #FFC107;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .assistant-avatar {
-            width: 40px;
-            height: 40px;
-            background-color: #4CAF50;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 10px;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
+        
         .message-container {
             display: flex;
+            margin-bottom: 15px;
             align-items: flex-start;
-            margin-bottom: 1rem;
+            transition: opacity 0.2s ease-in;
         }
+        
+        .user-message, .bot-message {
+            border-radius: 18px;
+            padding: 10px 15px;
+            max-width: 80%;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .user-message {
+            background-color: #e3f1fa;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .bot-message {
+            background-color: #f0f0f0;
+            border-bottom-left-radius: 5px;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        
+        .chat-input {
+            padding: 15px;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            background-color: #fff;
+        }
+        
+        .input-group {
+            border-radius: 25px;
+            overflow: hidden;
+        }
+        
+        .form-control {
+            border: 1px solid #ccc;
+            padding-left: 20px;
+        }
+        
+        .btn-success {
+            background-color: #4e994e;
+            font-weight: bold;
+        }
+        
+        .card {
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sensor-card {
+            border-left: 4px solid #4e994e;
+        }
+        
+        .sensor-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            color: #4e994e;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .assistant-avatar {
+            background-color: #4e994e;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .assistant-avatar svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .farmer-avatar {
+            background-color: #f8c44f;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
         .message-content {
             flex-grow: 1;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
+            background-color: #67a854;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: typing 1.4s infinite ease-in-out both;
+            animation-duration: 0.8s;
+        }
+        
+        .typing-indicator span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 100% {
+                transform: scale(0.75);
+                opacity: 0.4;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .bot-message p {
+            white-space: pre-wrap;
+        }
+        
+        .message-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .bot-message strong, .bot-message b {
+            font-weight: bold;
+            color: #2a6325;
+        }
+        
+        /* Improved list styling */
+        .bot-message ul, .bot-message ol {
+            margin-left: 1.5em;
+            padding-left: 0;
+        }
+        
+        /* Add responsive width for messages */
+        @media (max-width: 576px) {
+            .user-message, .bot-message {
+                max-width: 90%;
+            }
+        }
+        
+        /* Styling for thinking indicator status message */
+        .status-message {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        /* Faster fade-in for new messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Optimize message display transitions */
+        .bot-message, .user-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Ensure messages take up minimal space */
+        .message-text {
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Crop settings reminder */
+        .crop-settings-reminder {
+            font-size: 0.8em;
+            color: #666;
+            margin-left: 10px;
+            display: inline-block;
+        }
+        
+        /* Add a reset button */
+        .reset-chat-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            padding: 2px 8px;
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiM0Mjg4M0QiLz4KPHBhdGggZD0iTTEzIDIwQzEzIDE4LjM0MzEgMTQuMzQzMSAxNyAxNiAxN0gzNEMzNS42NTY5IDE3IDM3IDE4LjM0MzEgMzcgMjBWMzBDMzcgMzEuNjU2OSAzNS42NTY5IDMzIDM0IDMzSDI3LjVMMjUgMzdMMjIuNSAzM0gxNkMxNC4zNDMxIDMzIDEzIDMxLjY1NjkgMTMgMzBWMjBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMTcgMjNIMzNNMTcgMjdIMjgiIHN0cm9rZT0iIzQyODgzRCIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPGNpcmNsZSBjeD0iMzMiIGN5PSIyNyIgcj0iMiIgZmlsbD0iIzQyODgzRCIvPgo8L3N2Zz4K" alt="AgriGuardian Logo" width="36" height="36" class="d-inline-block align-text-top me-2">
+                AgriGuardian
+            </a>
+        </div>
+    </nav>
+    
     <div class="container">
-        <div class="header text-center">
-            <h1><img src="https://img.icons8.com/color/48/000000/farm.png" alt="Farm Icon" class="logo"> AgriGuardian</h1>
-            <p class="lead">AI-powered assistance for farmers</p>
-        </div>
-
-        <div class="row">
-            <!-- Main Chat Column -->
-            <div class="col-lg-8">
-                <div class="card mb-3">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">💬 Chat with AgriGuardian</h5>
-                    </div>
-                    <div class="card-body chat-area" id="chatArea">
-                        <div class="message-container">
-                            <div class="assistant-avatar">AG</div>
-                            <div class="message-content">
-                                <div class="bot-message">
-                                    <p>Welcome to AgriGuardian! I'm your AI farming assistant. How can I help with your farm today?</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <form id="chatForm" class="d-flex">
-                            <input type="text" id="userInput" class="form-control me-2" placeholder="Ask a farming question..." required>
-                            <button type="submit" class="btn btn-primary">Send</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sensor Data Column -->
-            <div class="col-lg-4">
-                <div class="card sensor-card mb-3">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">📊 Current Farm Conditions</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <p>🌡️ Temperature</p>
-                                <p class="sensor-value" id="temperature">32.5°C</p>
-                            </div>
-                            <div class="col-6">
-                                <p>💧 Humidity</p>
-                                <p class="sensor-value" id="humidity">65.2%</p>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-6">
-                                <p>🌱 Soil Moisture</p>
-                                <p class="sensor-value" id="soil_moisture">42.7%</p>
-                            </div>
-                            <div class="col-6">
-                                <p>☀️ Light Level</p>
-                                <p class="sensor-value" id="light_level">8250 Lux</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <p>🌧️ Rainfall (24h)</p>
-                                <p class="sensor-value" id="rainfall">12.3 mm</p>
-                            </div>
-                            <div class="col-6">
-                                <button id="refreshSensors" class="btn btn-sm btn-outline-success mt-4">Refresh Data</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Chart Card -->
-                <div class="card mb-3">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">📈 24-Hour Trends</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="trendChart" class="chart-container"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row mt-4">
-            <div class="col-12">
+            <div class="col-lg-8">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h5 class="mb-0">💬 Chat with AgriGuardian</h5>
+                        <button id="resetChatBtn" class="btn btn-sm btn-outline-secondary reset-chat-btn" title="Reset Chat">
+                            <i class="bi bi-trash"></i> Reset
+                        </button>
+                    </div>
+                    <div class="chat-area" id="chatArea">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <div class="chat-input">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="messageInput" placeholder="Ask a farming question...">
+                            <button class="btn btn-success" type="button" id="sendButton">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">ℹ️ About AgriGuardian</h5>
+                        <h5 class="mb-0">📊 Farm Sensors</h5>
                     </div>
                     <div class="card-body">
-                        <p>AgriGuardian is an AI-powered assistant designed to help farmers with real-time guidance on weather, pests, crop care, and other agricultural concerns, especially in low-connectivity zones.</p>
-                        <p>In a real deployment scenario, this service would integrate with:</p>
-                        <ul>
-                            <li>SMS messaging via AWS SNS/Lambda for farmers with limited connectivity</li>
-                            <li>Real IoT sensors placed in farm fields for accurate data</li>
-                            <li>Weather forecasting APIs for predictive guidance</li>
-                            <li>Historical farming data for personalized advice</li>
-                        </ul>
-                        <p><strong>Note:</strong> This demo uses the OpenRouter API with DeepSeek's AI model and has a limit of 50 requests per day.</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="sensor-icon">🌡️</span>
+                                <strong>Temperature</strong>
+                            </div>
+                            <div id="temperature">--°C</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="sensor-icon">💧</span>
+                                <strong>Humidity</strong>
+                            </div>
+                            <div id="humidity">--%</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="sensor-icon">🌱</span>
+                                <strong>Soil Moisture</strong>
+                            </div>
+                            <div id="soilMoisture">--%</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <span class="sensor-icon">☀️</span>
+                                <strong>Light Level</strong>
+                            </div>
+                            <div id="lightLevel">-- Lux</div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="sensor-icon">🌧️</span>
+                                <strong>Rainfall (24h)</strong>
+                            </div>
+                            <div id="rainfall">-- mm</div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-sm btn-outline-success" id="refreshSensorBtn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                </svg>
+                                Refresh Sensor Data
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <footer class="mt-4 text-center text-muted">
-            <p>&copy; 2023 AgriGuardian - AI for Sustainable Farming</p>
-        </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize request counter
+            // Initialize sensor data and request count
+            let sensorData = {
+                temperature: 28.5,
+                humidity: 65.2,
+                soil_moisture: 35.8,
+                light_level: 6500,
+                rainfall_last_24h: 12.3,
+                timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+            };
             let requestCount = 0;
-            const maxRequests = 50;
-
-            // Initialize chart
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            const chartLabels = Array.from({length: 24}, (_, i) => `${23-i}h ago`).reverse();
+            let cropInfo = null;
+            let chatHistoryLoaded = false;
             
-            const temperatureData = Array.from({length: 24}, () => Math.round((Math.random() * 20 + 20) * 10) / 10);
-            const humidityData = Array.from({length: 24}, () => Math.round((Math.random() * 60 + 30) * 10) / 10);
+            // Load chat history first
+            loadChatHistory().then(setupInitialUI);
             
-            const trendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: chartLabels,
-                    datasets: [
-                        {
-                            label: 'Temperature (°C)',
-                            data: temperatureData,
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            tension: 0.2
-                        },
-                        {
-                            label: 'Humidity (%)',
-                            data: humidityData,
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                            tension: 0.2
+            // Function to load chat history
+            async function loadChatHistory() {
+                try {
+                    const response = await fetch('/api/chat-history');
+                    if (!response.ok) {
+                        throw new Error('Failed to load chat history');
+                    }
+                    
+                    const data = await response.json();
+                    if (data.success && data.chat_history && data.chat_history.length > 0) {
+                        // We have history to restore
+                        chatHistoryLoaded = true;
+                        
+                        // Restore crop info if available
+                        if (data.crop_info && Object.keys(data.crop_info).length > 0) {
+                            cropInfo = data.crop_info;
+                            console.log("Restored crop info:", cropInfo);
                         }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false
-                        }
+                        
+                        // Restore chat messages
+                        data.chat_history.forEach(message => {
+                            addMessageToChat(message.role === 'user' ? 'user' : 'bot', message.content);
+                        });
+                        
+                        console.log("Chat history restored");
+                        return true;
+                    } else {
+                        console.log("No chat history found");
+                        return false;
+                    }
+                } catch (error) {
+                    console.error("Error loading chat history:", error);
+                    return false;
+                }
+            }
+            
+            // Setup initial UI after loading (or failing to load) chat history
+            function setupInitialUI() {
+                // Add welcome message only if no chat history was loaded
+                if (!chatHistoryLoaded) {
+                    const welcomeMessage = "{{ welcome_message|safe }}";
+                    if(welcomeMessage) {
+                        addMessageToChat('bot', welcomeMessage);
+                    }
+                    
+                    // Show the crop setup form only on first visit
+                    setupCropForm();
+                } else if (cropInfo) {
+                    // If we've restored chat history and have crop info
+                    // Show a subtle reminder of the current crop settings
+                    const cropSummary = document.createElement('div');
+                    cropSummary.className = 'crop-settings-reminder';
+                    cropSummary.innerHTML = `<small class="text-muted">Currently advising on: ${cropInfo.crops} (${cropInfo.stage})</small>`;
+                    document.querySelector('.chat-header').appendChild(cropSummary);
+                }
+                
+                // Scroll to the bottom of chat
+                const chatArea = document.getElementById('chatArea');
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+            
+            // Fetch initial sensor data
+            fetch('/api/sensor-data')
+                .then(response => response.json())
+                .then(data => {
+                    sensorData = data;
+                    updateSensorDisplays(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching sensor data:', error);
+                });
+            
+            // Update sensor displays
+            function updateSensorDisplays(data) {
+                if (!data) return;
+                
+                // Make sure we have all required fields
+                const requiredFields = ["temperature", "humidity", "soil_moisture", "light_level", "rainfall_last_24h"];
+                let dataValid = true;
+                
+                for (const field of requiredFields) {
+                    if (!(field in data)) {
+                        console.error(`Missing field in sensor data: ${field}`);
+                        dataValid = false;
                     }
                 }
-            });
-
-            // Function to simulate IoT data
-            function simulateIoTData() {
-                return {
-                    "temperature": Math.round((Math.random() * 20 + 20) * 10) / 10,  // 20-40°C
-                    "humidity": Math.round((Math.random() * 60 + 30) * 10) / 10,     // 30-90%
-                    "soil_moisture": Math.round((Math.random() * 50 + 10) * 10) / 10,// 10-60%
-                    "light_level": Math.round(Math.random() * 8000 + 2000),         // 2000-10000 Lux
-                    "rainfall_last_24h": Math.round((Math.random() * 30) * 10) / 10  // 0-30mm
-                };
+                
+                if (!dataValid) return;
+                
+                // Update temperature display
+                document.getElementById('temperature').textContent = `${data.temperature}°C`;
+                
+                // Update humidity display
+                document.getElementById('humidity').textContent = `${data.humidity}%`;
+                
+                // Update soil moisture display
+                document.getElementById('soilMoisture').textContent = `${data.soil_moisture}%`;
+                
+                // Update light level display
+                document.getElementById('lightLevel').textContent = `${data.light_level} Lux`;
+                
+                // Update rainfall display
+                document.getElementById('rainfall').textContent = `${data.rainfall_last_24h} mm`;
+                
+                // Update gauges if they exist
+                updateGauges(data);
             }
 
-            // Initialize sensor data and crop information
-            let sensorData = simulateIoTData();
-            let cropInfo = {
-                crops: "various crops",
-                stage: "unknown", 
-                issues: null
-            };
-
-            // Update sensor displays with simulated data
-            function updateSensorDisplays(data) {
-                document.getElementById('temperature').innerText = data.temperature + '°C';
-                document.getElementById('humidity').innerText = data.humidity + '%';
-                document.getElementById('soil_moisture').innerText = data.soil_moisture + '%';
-                document.getElementById('light_level').innerText = data.light_level + ' Lux';
-                document.getElementById('rainfall').innerText = data.rainfall_last_24h + ' mm';
+            // Initialize chart
+            function updateGauges(data) {
+                // This function would update gauges if we had them
+                // For now it's a placeholder
             }
 
             // Refresh sensor data button
-            document.getElementById('refreshSensors').addEventListener('click', function() {
-                sensorData = simulateIoTData();
-                updateSensorDisplays(sensorData);
-                
-                // Update the chart with new data point
-                trendChart.data.datasets[0].data.shift();
-                trendChart.data.datasets[0].data.push(sensorData.temperature);
-                trendChart.data.datasets[1].data.shift();
-                trendChart.data.datasets[1].data.push(sensorData.humidity);
-                trendChart.update();
+            document.getElementById('refreshSensorBtn').addEventListener('click', function() {
+                fetch('/api/sensor-data')
+                    .then(response => response.json())
+                    .then(data => {
+                        sensorData = data;
+                        updateSensorDisplays(data);
+                    });
             });
-
-            // Modified chat form submission
-            document.getElementById('chatForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const userInput = document.getElementById('userInput');
-                const message = userInput.value.trim();
+            
+            // Message input event
+            document.getElementById('messageInput').addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    document.getElementById('sendButton').click();
+                }
+            });
+            
+            // Send button click
+            document.getElementById('sendButton').addEventListener('click', function() {
+                const messageInput = document.getElementById('messageInput');
+                const message = messageInput.value.trim();
                 
                 if (!message) return;
                 
+                // Clear input
+                messageInput.value = '';
+                
                 // Add user message to chat
                 addMessageToChat('user', message);
-                userInput.value = '';
                 
-                if (requestCount >= maxRequests) {
+                // Check if we've reached the API limit
+                if (requestCount >= 50) {
                     addMessageToChat('bot', "I'm sorry, but we've reached the daily limit of API requests (50/50). Please try again tomorrow.");
                     return;
                 }
@@ -385,6 +584,15 @@
                     // Display message
                     addMessageToChat('bot', `Thank you! I'll tailor my advice for ${cropInfo.crops} at the ${cropInfo.stage} stage.`);
                     
+                    // Store crop info on server
+                    fetch('/api/setup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(cropInfo)
+                    });
+                    
                     // Hide the form
                     this.parentNode.parentNode.style.display = 'none';
                 });
@@ -392,77 +600,200 @@
 
             // Function to call the API
             function callAgriGuardianAPI(message, sensorData, cropInfo, thinkingId) {
-                                    // In a real app, this would call your backend API
-                // For demo, we'll use the actual fetch API to call our backend
+                // Make sure sensorData has all required fields
+                if (!sensorData || typeof sensorData !== 'object') {
+                    sensorData = {
+                        temperature: 28.5,
+                        humidity: 65.2,
+                        soil_moisture: 35.8,
+                        light_level: 6500,
+                        rainfall_last_24h: 12.3,
+                        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                    };
+                }
                 
-                setTimeout(() => {
-                    fetch('/api/ask', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            question: message,
-                            sensor_data: sensorData,
-                            crop_info: cropInfo
-                        })
+                // Ensure timestamp exists
+                if (!('timestamp' in sensorData)) {
+                    sensorData.timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                }
+                
+                console.log("Sending API request with:", {
+                    question: message,
+                    sensor_data: sensorData,
+                    crop_info: cropInfo
+                });
+                
+                // Set a timeout for feedback on waiting status
+                const processingTimeout = setTimeout(() => {
+                    updateThinkingIndicator(thinkingId, "Analyzing farm data...");
+                }, 2000);
+                
+                // Set another timeout for longer wait time feedback
+                const longWaitTimeout = setTimeout(() => {
+                    console.log("API call taking longer than expected...");
+                    updateThinkingIndicator(thinkingId, "Processing your question... This might take a moment.");
+                }, 10000);
+                
+                fetch('/api/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        sensor_data: sensorData,
+                        crop_info: cropInfo
                     })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Remove thinking indicator
-                        removeThinkingIndicator(thinkingId);
-                        
-                        if (data.success) {
-                            // Update sensor data
-                            sensorData = data.sensor_data;
-                            updateSensorDisplays(sensorData);
-                            
-                            // Display response
-                            addMessageToChat('bot', data.response);
-                            
-                            // Update request count
-                            requestCount = data.request_count;
-                        } else {
-                            // Handle error response
-                            let errorMsg = data.message || data.error || "Sorry, I couldn't process your question. Please try again.";
-                            addMessageToChat('bot', errorMsg);
-                            console.error('API Error:', data);
-                        }
-                    })
-                    .catch(error => {
-                        // Remove thinking indicator
-                        removeThinkingIndicator(thinkingId);
-                        
-                        // Display error
-                        addMessageToChat('bot', "Sorry, there was a network error processing your request. Please check your connection and try again.");
-                        console.error('Fetch Error:', error);
-                        
-                        // Try to recover with default response
-                        setTimeout(() => {
-                            let defaultResponse = "Based on your question about crops, here are some general tips:\n\n" + 
-                                "1. Ensure proper watering based on current soil moisture levels\n" +
-                                "2. Monitor temperature and provide shade if needed\n" +
-                                "3. Apply appropriate fertilizers for your specific crop stage\n\n" +
-                                "For more specific advice, please try again or provide more details about your crops.";
-                            
-                            if (message.toLowerCase().includes('potato')) {
-                                defaultResponse = "For potato growing issues, check:\n\n" + 
-                                    "1. Soil moisture - potatoes need consistent moisture\n" +
-                                    "2. Temperature - ideal range is 15-20°C\n" +
-                                    "3. Hilling - ensure proper hilling for tuber development\n" +
-                                    "4. Fertilization - avoid excess nitrogen\n\n" +
-                                    "If leaves are yellowing, check for blight or overwatering.";
-                            }
-                            
-                            addMessageToChat('bot', defaultResponse);
-                        }, 1000);
+                })
+                .then(response => {
+                    console.log("Response status:", response.status);
+                    clearTimeout(processingTimeout);
+                    
+                    // Log response headers for debugging
+                    const responseHeaders = {};
+                    response.headers.forEach((value, name) => {
+                        responseHeaders[name] = value;
                     });
-                }, 1000);
+                    console.log("Response headers:", responseHeaders);
+                    
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Clear timeouts since we got a response
+                    clearTimeout(longWaitTimeout);
+                    clearTimeout(processingTimeout);
+                    
+                    console.log("API Response:", data);
+                    // Remove thinking indicator
+                    removeThinkingIndicator(thinkingId);
+                    
+                    if (data.success) {
+                        // Update sensor data
+                        if (data.sensor_data && typeof data.sensor_data === 'object') {
+                            sensorData = data.sensor_data;
+                            updateSensorDisplays(data.sensor_data);
+                        }
+                        
+                        // Check if we have a valid response
+                        if (!data.response) {
+                            addMessageToChat('bot', "I apologize, but I didn't receive a proper response from the AI system. Please try asking again.");
+                            console.error('Empty response received');
+                            return;
+                        }
+                        
+                        // Extract and display the useful part of the response
+                        const processedResponse = extractUsefulContent(data.response);
+                        addMessageToChat('bot', processedResponse);
+                        
+                        // Update request count
+                        requestCount = data.request_count;
+                    } else {
+                        // Handle error response
+                        let errorMsg = data.message || data.error || "Sorry, I couldn't process your question. Please try again.";
+                        addMessageToChat('bot', errorMsg);
+                        console.error('API Error:', data);
+                    }
+                })
+                .catch(error => {
+                    // Clear timeouts if there's an error
+                    clearTimeout(processingTimeout);
+                    clearTimeout(longWaitTimeout);
+                    
+                    console.error('Fetch Error:', error);
+                    // Remove thinking indicator
+                    removeThinkingIndicator(thinkingId);
+                    
+                    // Display network error message
+                    addMessageToChat('bot', "Sorry, there was a network error processing your request. Please try again.");
+                    
+                    // Try to recover connection
+                    console.log("Checking server connection...");
+                    fetch('/api/sensor-data')
+                        .then(response => {
+                            if (response.ok) {
+                                console.log("Connection with server is working. API service might be down.");
+                            }
+                        })
+                        .catch(() => {
+                            console.error("Cannot reach server. Network issue detected.");
+                        });
+                });
+            }
+            
+            // Function to extract useful content from AI response
+            function extractUsefulContent(response) {
+                if (!response) return "No response received";
+                
+                // If the response contains an analysis section, extract the actionable part
+                if (response.includes("Analysis:")) {
+                    // Try to find actionable content after analysis
+                    const parts = response.split("Analysis:");
+                    if (parts.length > 1) {
+                        // Look for actionable sections
+                        const actionableSections = ["Solution:", "Actions:", "Recommendations:", "Steps:", "What to do:"];
+                        for (const section of actionableSections) {
+                            if (parts[1].includes(section)) {
+                                const actionParts = parts[1].split(section);
+                                if (actionParts.length > 1) {
+                                    return section + actionParts[1];
+                                }
+                            }
+                        }
+                        
+                        // If no specific section found, return the content after Analysis
+                        // but trim it if it's too long
+                        const analysisContent = parts[1].trim();
+                        if (analysisContent.length > 800) {
+                            return "Based on the analysis: " + analysisContent.substring(0, 800) + "...";
+                        }
+                        return "Based on the analysis: " + analysisContent;
+                    }
+                }
+                
+                // If the response contains "Actionable steps:" extract that section
+                if (response.includes("Actionable steps:")) {
+                    const parts = response.split("Actionable steps:");
+                    if (parts.length > 1) {
+                        return "Actionable steps:" + parts[1];
+                    }
+                }
+                
+                // If we have a very long response, try to extract the most useful part
+                if (response.length > 1000) {
+                    // Look for common conclusion markers
+                    const conclusionMarkers = ["In conclusion", "To summarize", "In summary", "Therefore", "To fix this"];
+                    for (const marker of conclusionMarkers) {
+                        if (response.includes(marker)) {
+                            const parts = response.split(marker);
+                            if (parts.length > 1) {
+                                return marker + parts[1];
+                            }
+                        }
+                    }
+                    
+                    // If no conclusion marker found, return the first 800 chars
+                    return response.substring(0, 800) + "...";
+                }
+                
+                // Return the original response if it's not too long
+                return response;
+            }
+            
+            // Update the thinking indicator with a status message
+            function updateThinkingIndicator(id, message) {
+                const element = document.getElementById(id);
+                if (element) {
+                    const messageDiv = element.querySelector('.bot-message');
+                    if (messageDiv) {
+                        messageDiv.innerHTML = `
+                            <div class="typing-indicator"><span></span><span></span><span></span></div>
+                            <div class="status-message">${message}</div>
+                        `;
+                    }
+                }
             }
             
             // Add message to chat area
@@ -475,11 +806,23 @@
                 const avatar = document.createElement('div');
                 if (sender === 'user') {
                     avatar.className = 'farmer-avatar';
-                    avatar.textContent = 'F';
+                    avatar.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z" fill="#f8c44f" opacity="0.3"/>
+                        <path d="M12 6C10.9 6 10 6.9 10 8C10 9.1 10.9 10 12 10C13.1 10 14 9.1 14 8C14 6.9 13.1 6 12 6Z" fill="white"/>
+                        <path d="M12 11C9.79 11 8 12.79 8 15V16H16V15C16 12.79 14.21 11 12 11Z" fill="white"/>
+                        <path d="M7 9C7 9.55 7.45 10 8 10H9V12H8C6.9 12 6 11.1 6 10V9C6 7.9 6.9 7 8 7H9V9H8C7.45 9 7 8.55 7 8V7.5C7 7.22 6.78 7 6.5 7C6.22 7 6 7.22 6 7.5V9Z" fill="white"/>
+                        <path d="M18 9C18 9.55 17.55 10 17 10H16V12H17C18.1 12 19 11.1 19 10V9C19 7.9 18.1 7 17 7H16V9H17C17.55 9 18 8.55 18 8V7.5C18 7.22 18.22 7 18.5 7C18.78 7 19 7.22 19 7.5V9Z" fill="white"/>
+                    </svg>`;
                     messageContainer.style.flexDirection = 'row-reverse';
                 } else {
                     avatar.className = 'assistant-avatar';
-                    avatar.textContent = 'AG';
+                    avatar.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z" fill="white" opacity="0.3"/>
+                        <path d="M7.5 10.5C7.5 9.12 8.62 8 10 8C11.38 8 12.5 9.12 12.5 10.5C12.5 11.88 11.38 13 10 13C8.62 13 7.5 11.88 7.5 10.5Z" fill="white"/>
+                        <path d="M16.5 16.5C16.5 14.84 14.16 13.5 12 13.5C9.84 13.5 7.5 14.84 7.5 16.5V17H16.5V16.5Z" fill="white"/>
+                        <path d="M14 7.5C14 6.12 15.12 5 16.5 5C17.88 5 19 6.12 19 7.5C19 8.88 17.88 10 16.5 10C15.12 10 14 8.88 14 7.5Z" fill="white"/>
+                        <path d="M18.5 13C17.74 13 17.04 12.81 16.5 12.5C16.91 13.05 17.16 13.71 17.2 14.44C17.9 14.16 18.65 14 19.5 14C19.84 14 20.17 14.04 20.5 14.09V13.5C20.5 12.12 19.38 11 18 11H15C14.96 11.32 14.97 11.66 15.03 12H18C18.55 12 19 12.45 19 13V13.5C19.18 13.39 19.37 13.3 19.58 13.23C19.22 13.08 18.87 13 18.5 13Z" fill="white"/>
+                    </svg>`;
                 }
                 
                 const messageContent = document.createElement('div');
@@ -488,8 +831,12 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
                 
-                const messagePara = document.createElement('p');
-                messagePara.textContent = message;
+                // Check if message contains markdown-style formatting
+                const formattedMessage = formatMessage(message);
+                
+                const messagePara = document.createElement('div');
+                messagePara.innerHTML = formattedMessage;
+                messagePara.className = 'message-text';
                 
                 messageDiv.appendChild(messagePara);
                 messageContent.appendChild(messageDiv);
@@ -499,6 +846,25 @@
                 
                 // Scroll to bottom
                 chatArea.scrollTop = chatArea.scrollHeight;
+                
+                // Log the message for debugging
+                console.log(`Added ${sender} message: ${message.substring(0, 100)}...`);
+            }
+            
+            // Format message text with basic markdown support
+            function formatMessage(text) {
+                if (!text) return "No response received";
+                
+                // Convert asterisks to bold
+                let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert line breaks to <br>
+                formatted = formatted.replace(/\n/g, '<br>');
+                
+                // Convert bullet points
+                formatted = formatted.replace(/^- (.*)/gm, '• $1');
+                
+                return formatted;
             }
             
             // Add thinking indicator
@@ -512,7 +878,13 @@
                 
                 const avatar = document.createElement('div');
                 avatar.className = 'assistant-avatar';
-                avatar.textContent = 'AG';
+                avatar.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z" fill="white" opacity="0.3"/>
+                    <path d="M7.5 10.5C7.5 9.12 8.62 8 10 8C11.38 8 12.5 9.12 12.5 10.5C12.5 11.88 11.38 13 10 13C8.62 13 7.5 11.88 7.5 10.5Z" fill="white"/>
+                    <path d="M16.5 16.5C16.5 14.84 14.16 13.5 12 13.5C9.84 13.5 7.5 14.84 7.5 16.5V17H16.5V16.5Z" fill="white"/>
+                    <path d="M14 7.5C14 6.12 15.12 5 16.5 5C17.88 5 19 6.12 19 7.5C19 8.88 17.88 10 16.5 10C15.12 10 14 8.88 14 7.5Z" fill="white"/>
+                    <path d="M18.5 13C17.74 13 17.04 12.81 16.5 12.5C16.91 13.05 17.16 13.71 17.2 14.44C17.9 14.16 18.65 14 19.5 14C19.84 14 20.17 14.04 20.5 14.09V13.5C20.5 12.12 19.38 11 18 11H15C14.96 11.32 14.97 11.66 15.03 12H18C18.55 12 19 12.45 19 13V13.5C19.18 13.39 19.37 13.3 19.58 13.23C19.22 13.08 18.87 13 18.5 13Z" fill="white"/>
+                </svg>`;
                 
                 const messageContent = document.createElement('div');
                 messageContent.className = 'message-content';
@@ -520,8 +892,8 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'bot-message';
                 
-                const messagePara = document.createElement('p');
-                messagePara.innerHTML = '<em>Consulting agricultural knowledge...</em>';
+                const messagePara = document.createElement('div');
+                messagePara.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
                 
                 messageDiv.appendChild(messagePara);
                 messageContent.appendChild(messageDiv);
@@ -542,8 +914,39 @@
                 }
             }
             
-            // When the page loads, setup the crop form
-            setupCropForm();
+            // Reset chat button functionality
+            document.getElementById('resetChatBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to reset the chat? All conversation history will be cleared.')) {
+                    // Clear chat UI
+                    document.getElementById('chatArea').innerHTML = '';
+                    
+                    // Reset server session
+                    fetch('/api/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(() => {
+                        console.log('Chat reset successfully');
+                        // Reset local variables
+                        cropInfo = null;
+                        chatHistoryLoaded = false;
+                        
+                        // Remove crop reminder if it exists
+                        const reminderEl = document.querySelector('.crop-settings-reminder');
+                        if (reminderEl) reminderEl.remove();
+                        
+                        // Show welcome message
+                        const welcomeMessage = "{{ welcome_message|safe }}";
+                        if(welcomeMessage) {
+                            addMessageToChat('bot', welcomeMessage);
+                        }
+                        
+                        // Show setup form
+                        setupCropForm();
+                    });
+                }
+            });
         });
     </script>
 </body>

@@ -8,7 +8,7 @@ provider:
   stage: dev
   region: us-east-1
   environment:
-    OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY, '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'}
+    OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY}
     DYNAMODB_TABLE_NAME: ${self:service}-${opt:stage, self:provider.stage}
   iamRoleStatements:
     - Effect: Allow

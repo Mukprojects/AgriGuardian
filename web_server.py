@@ -1,113 +1,89 @@
-from flask import Flask, render_template, request, jsonify, session
 import os
 import requests
 import random
 import json
-from datetime import datetime
+import traceback
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from flask import Flask, render_template, request, jsonify, session
 
 # Load environment variables from .env file
 load_dotenv()
 
 # OpenRouter API configuration
-API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+API_KEY = os.environ.get("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "anthropic/claude-3-sonnet-20240229"  # Amazon Bedrock model via OpenRouter
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # For session management
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))  # For session management
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 request_count = 0
 
-# Default examples for common crop questions
-DEFAULT_EXAMPLES = {
-    "potato": """
-Based on your question about potato growth issues, here's a detailed analysis:
+# Add welcome message
+WELCOME_MESSAGE = "Welcome to AgriGuardian! I'm your AI farming assistant. I provide quick 5-10 second responses to help with your farming questions. How can I help with your farm today?"
 
-**Potato Growing Problems Analysis**
+# Check if API key is set
+if not API_KEY:
+    print("WARNING: No OpenRouter API key found. You will be prompted to enter one when starting the server.")
 
-1. **Environmental Factors**
-   - Temperature: Potatoes prefer cooler temperatures (15-20°C), and your current reading of 32°C is too high.
-   - Soil Moisture: Your 40% moisture reading is adequate but needs consistency.
-   - Light Level: Current levels are sufficient.
-
-2. **Common Issues Based on Your Conditions**
-   - **Heat Stress**: Your high temperature (32°C) is causing slow tuber formation and reduced growth.
-   - **Inconsistent Watering**: Potatoes need even moisture for proper tuber development.
-   - **Soil Compaction**: Heavy soils restrict tuber expansion.
-
-3. **Immediate Actions**:
-   - Apply 2-3 inches of mulch to cool soil temperatures
-   - Water deeply early morning (not evening) to maintain consistent moisture
-   - Hill the plants with loose soil to provide more room for tuber formation
-   - Apply liquid seaweed fertilizer for heat stress resilience
-
-4. **Long-term Management**:
-   - For next planting, time potato crops for cooler seasons
-   - Incorporate compost to improve soil structure
-   - Consider raised beds for better drainage
-   - Use row covers during extreme heat periods
-
-Monitor for improvement over the next 7-10 days after implementing these changes.
-    """,
+def get_api_key():
+    """Get API key from environment or prompt user"""
+    global API_KEY
+    if API_KEY:
+        return API_KEY
     
-    "generic_crop": """
-Based on the current farm conditions, here's why you might be experiencing issues with your crops:
-
-**Current Conditions Analysis:**
-- Temperature: 32-36°C (high for many crops)
-- Humidity: Low-to-moderate (30-40%)
-- Soil moisture: Variable (20-50%)
-
-**Common Problems at These Conditions:**
-
-1. **Heat Stress & Transpiration**:
-   - Most crops struggle when temperatures exceed 32°C
-   - High temperatures with low humidity cause excessive water loss
-   - SOLUTION: Apply shade cloth (30% shade) during peak hours (10am-3pm)
-
-2. **Root Development Issues**:
-   - Hot soil inhibits proper root growth and nutrient uptake
-   - SOLUTION: Apply 2-3 inches of organic mulch to cool soil and retain moisture
-
-3. **Pollination Problems**:
-   - Hot, dry conditions reduce pollen viability in flowering crops
-   - SOLUTION: Mist plants briefly during morning hours to increase humidity
-
-4. **Watering Strategy Adjustment**:
-   - Current conditions require deeper, less frequent watering
-   - SOLUTION: Apply water directly to soil (not leaves) early morning, ensuring it reaches 6-8 inches deep
-   
-5. **Nutrient Stress**:
-   - Heat accelerates both nutrient demand and nutrient leaching
-   - SOLUTION: Apply half-strength liquid fertilizer weekly instead of full-strength monthly
-
-For specific crop recommendations, please provide details about what you're growing and the current growth stage.
-    """
-}
+    # Prompt user for API key
+    print("\n===== OpenRouter API Key Required =====")
+    print("To use AgriGuardian, you need an OpenRouter API key with access to Amazon Bedrock models.")
+    print("Get your key at: https://openrouter.ai/keys")
+    api_key = input("Enter your OpenRouter API key: ").strip()
+    
+    if api_key:
+        # Save to environment variable for current session
+        API_KEY = api_key
+        os.environ["OPENROUTER_API_KEY"] = api_key
+        
+        # Ask if user wants to save to .env file
+        save_to_env = input("Save this API key to .env file for future use? (y/n): ").strip().lower()
+        if save_to_env == 'y':
+            try:
+                with open('.env', 'w') as f:
+                    f.write(f"OPENROUTER_API_KEY={api_key}\n")
+                print("API key saved to .env file.")
+            except Exception as e:
+                print(f"Error saving API key to .env file: {e}")
+    
+    return API_KEY
 
 def simulate_iot_data():
     """Simulate IoT sensor data that would come from farm sensors"""
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return {
         "temperature": round(random.uniform(20, 40), 1),  # Celsius
         "humidity": round(random.uniform(30, 90), 1),     # Percentage
         "soil_moisture": round(random.uniform(10, 60), 1),# Percentage
         "light_level": round(random.uniform(2000, 10000)), # Lux
         "rainfall_last_24h": round(random.uniform(0, 30), 1), # mm
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "timestamp": current_time
     }
 
 def construct_prompt(user_question, sensor_data, crop_info=None, history=None):
-    """Construct a detailed prompt combining the user's question with sensor data context"""
+    """Construct a concise prompt combining the user's question with sensor data context"""
     
-    system_prompt = """You are AgriGuardian, an AI agricultural assistant for farmers.
-    You must provide detailed, practical, and actionable advice based on the farmer's question and available sensor data.
-    Always analyze how the environmental conditions (temperature, humidity, soil moisture, etc.) specifically affect the crops mentioned.
-    Your answers must be thorough, specific, and educational - avoid generic responses.
-    Format your answers with clear sections, bullet points for action steps, and bold for important information.
-    Explain WHY you're making each recommendation based on the environmental data provided.
-    If the question needs clarification, suggest specific information that would help you give better advice.
-    The farmer uses this data to make critical decisions, so your answers must be accurate, helpful, and directly address the question asked.
-    NEVER respond with generic advice like "monitor your crops closely" or "provide more details" - always give specific, actionable guidance.
+    system_prompt = """You are AgriGuardian, a fast-response agricultural assistant. 
+    Provide VERY BRIEF advice based on the farmer's question and sensor data.
+    Keep responses under 150 words - brevity is critical for fast response times.
+    Focus on:
+    1. One-sentence direct answer to the question
+    2. 1-2 specific action steps based on environmental data
+    3. Only the most essential information
+
+    Use bullet points for actions. Use bold only for the single most important advice.
+    Be extremely concise and direct - avoid unnecessary explanations.
+    Do not introduce your answer or provide context the user already knows.
     """
     
     # Add crop information if available
@@ -121,64 +97,49 @@ def construct_prompt(user_question, sensor_data, crop_info=None, history=None):
         if crop_info.get('issues'):
             crop_context += f"\n    - Reported issues: {crop_info.get('issues')}"
     
-    # Add chat history if available
+    # Add minimal chat history if available
     history_context = ""
     if history and len(history) > 0:
-        history_context = "\nPREVIOUS CONVERSATION:\n"
-        for entry in history:
+        # Only include the last exchange for context
+        last_entries = history[-2:] if len(history) >= 2 else history
+        history_context = "\nLAST EXCHANGE:\n"
+        for entry in last_entries:
             role = "FARMER" if entry["role"] == "user" else "ASSISTANT"
-            history_context += f"{role}: {entry['content']}\n\n"
+            # Only include first 50 chars of previous messages
+            content = entry["content"][:100] + ("..." if len(entry["content"]) > 100 else "")
+            history_context += f"{role}: {content}\n"
     
     # Add seasonal context
     current_month = datetime.now().strftime("%B")
     
-    # Add examples for specificity
-    examples = """
-EXAMPLES OF GOOD RESPONSES:
-
-QUESTION: "Why are my tomato leaves turning yellow?"
-GOOD ANSWER: "Based on your soil moisture (58%) and temperature (32°C), the yellowing is likely from overwatering rather than disease. Tomatoes prefer soil to dry slightly between waterings. Let soil dry to 40% moisture, then water deeply but less frequently (every 3-4 days in current heat). Remove affected leaves, improve drainage by adding 2 inches of compost, and consider adding calcium (1 tablespoon of crushed eggshells per plant) to prevent blossom end rot which often accompanies water issues."
-
-QUESTION: "When should I plant wheat?"
-GOOD ANSWER: "With your current soil moisture at 45% and consistent rainfall of 25mm/week, your conditions are ideal for wheat planting now. For winter wheat varieties in your current temperature range (22-28°C), plant at 1.5-inch depth in rows 6-8 inches apart. Plant when soil temperatures are consistently 15-20°C to ensure strong root development before first frost. Based on your soil moisture, irrigate only if rainfall drops below 15mm/week during establishment phase."
-    """
+    # Remove examples to reduce token count
     
     user_prompt = f"""
-    FARMER QUESTION: {user_question}
+    QUESTION: {user_question}
     
-    CURRENT FARM CONDITIONS:
+    CONDITIONS:
     - Temperature: {sensor_data['temperature']}°C
     - Humidity: {sensor_data['humidity']}%
     - Soil Moisture: {sensor_data['soil_moisture']}%
     - Light Level: {sensor_data['light_level']} Lux
     - Rainfall (Last 24h): {sensor_data['rainfall_last_24h']}mm
-    - Current Month: {current_month}
-    - Date/Time: {sensor_data['timestamp']}
+    - Month: {current_month}
     {crop_context}
     {history_context}
-    {examples}
     
-    Please provide specific, detailed, and actionable advice that directly addresses the question. Analyze how the current conditions are affecting the crops, explain why certain issues might be occurring, and provide clear step-by-step solutions.
+    Provide brief, specific advice that directly addresses the question. Include 2-3 actionable steps.
     """
     
     return system_prompt, user_prompt
 
-def ask_deepseek(user_question, sensor_data=None, crop_info=None, history=None):
-    """Send a prompt to the DeepSeek model via OpenRouter API"""
+def ask_ai(user_question, sensor_data=None, crop_info=None, history=None):
+    """Send a prompt to the AI model via OpenRouter API"""
     global request_count
     
-    # Check for keywords to determine default example fallbacks
-    use_default = False
-    default_response = DEFAULT_EXAMPLES["generic_crop"]
-    
-    if "potato" in user_question.lower():
-        default_response = DEFAULT_EXAMPLES["potato"]
-        use_default = True
-        
-    # If we have a default and we're using defaults, return it immediately
-    if use_default:
-        request_count += 1
-        return default_response
+    # Ensure we have an API key
+    api_key = get_api_key()
+    if not api_key:
+        return "Error: No API key provided. Please restart the server and enter your OpenRouter API key."
     
     if sensor_data is None:
         sensor_data = simulate_iot_data()
@@ -186,64 +147,158 @@ def ask_deepseek(user_question, sensor_data=None, crop_info=None, history=None):
     system_prompt, user_prompt = construct_prompt(user_question, sensor_data, crop_info, history)
     
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://agriguardian-app.com", 
         "X-Title": "AgriGuardian"
     }
     
+    # Follow exactly the OpenRouter example format
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+    
     data = {
         "model": MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
+        "messages": messages,
+        "max_tokens": 350,  # Limit token count for faster responses
+        "temperature": 0.7,  # Slightly reduced temperature for more focused responses
+        "top_p": 0.1,       # Lower top_p for more deterministic responses (faster)
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
     }
+    
+    # Debug
+    print(f"Sending to OpenRouter API with model: {MODEL}")
     
     try:
         # Log what we're sending to API for debugging
         print(f"Sending request to API with question: {user_question}")
         
-        response = requests.post(API_URL, headers=headers, json=data, timeout=30)
+        response = requests.post(
+            url=API_URL,
+            headers=headers,
+            json=data,
+            timeout=120  # Increased timeout to 2 minutes to ensure response completion
+        )
+        
+        # Debug response
+        print(f"API Response status: {response.status_code}")
+        print(f"API Response headers: {response.headers}")
+        
+        # Log the full response for debugging
+        try:
+            print(f"API Response text: {response.text}")
+        except:
+            print("Could not print response text")
+        
+        # Check if response is valid JSON
+        try:
+            result = response.json()
+            print(f"API Response JSON parsed successfully: {json.dumps(result, indent=2)[:500]}...")
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON response: {str(e)}")
+            return "Error: The API returned an invalid response format. Please try again."
+        
         response.raise_for_status()  # Raise exception for HTTP errors
         
+        # Ensure we have valid JSON response
         result = response.json()
         request_count += 1
         
+        # Extract message from response
         if "choices" in result and len(result["choices"]) > 0:
-            response_text = result["choices"][0]["message"]["content"].strip()
+            message = result["choices"][0]["message"]
+            content = ""
             
-            # Check if response is too generic
-            generic_phrases = ["monitor your crops closely", "provide more details", "for more specific advice", 
-                             "I need more information", "provide details about your crop"]
-            if any(phrase in response_text.lower() for phrase in generic_phrases) and len(response_text) < 200:
-                return DEFAULT_EXAMPLES["generic_crop"]
+            # Check for content field
+            if "content" in message and message["content"]:
+                content = message["content"].strip()
             
-            return response_text
+            # Check for reasoning field (fallback if content is empty)
+            if not content and "reasoning" in message and message["reasoning"]:
+                print("Using reasoning field as content")
+                content = message["reasoning"].strip()
+                
+                # Extract the most useful part of the reasoning
+                if "Actionable steps:" in content:
+                    parts = content.split("Actionable steps:")
+                    actionable_part = parts[1].strip()
+                    content = f"Based on the analysis of your farm conditions, here's what to do:\n\nActionable steps:{actionable_part}"
+                elif "Analysis:" in content:
+                    parts = content.split("Analysis:")
+                    if len(parts) > 1:
+                        analysis = parts[1].strip()
+                        # Look for solution sections
+                        solution_markers = ["Solution:", "Actions:", "Recommendations:", "Steps:", "What to do:"]
+                        for marker in solution_markers:
+                            if marker in analysis:
+                                solution_parts = analysis.split(marker)
+                                if len(solution_parts) > 1:
+                                    content = f"Analysis summary: {solution_parts[0][:200]}...\n\n{marker}{solution_parts[1]}"
+                                    break
+                        else:
+                            # If no solution marker found, use the first part of the analysis
+                            content = f"Based on analysis of your farm conditions:\n\n{analysis[:800]}"
+            
+            if content:
+                # Clean up the content to focus on actionable advice
+                if len(content) > 1500:
+                    # Try to extract the most important parts
+                    important_sections = []
+                    
+                    # Look for specific sections
+                    sections = ["Actionable steps:", "Recommendations:", "Solution:", "What to do:"]
+                    for section in sections:
+                        if section in content:
+                            parts = content.split(section)
+                            if len(parts) > 1:
+                                important_sections.append(f"{section}{parts[1].split(sections[0])[0] if len(sections) > 0 else parts[1]}")
+                    
+                    # If we found important sections, use them
+                    if important_sections:
+                        content = "\n\n".join(important_sections)
+                    else:
+                        # Otherwise, trim the content
+                        content = content[:1500] + "..."
+                
+                return content
+            else:
+                print("No content or reasoning in message")
+                return "Sorry, I couldn't generate a helpful response. Based on common issues with tomatoes, check your watering schedule, ensure adequate sunlight, and inspect for pests or disease signs."
         else:
             print(f"Unexpected API response format: {result}")
-            return DEFAULT_EXAMPLES["generic_crop"]
+            error_message = "Sorry, I encountered an issue understanding your question. Please try rephrasing it."
+            if "error" in result:
+                error_detail = result.get("error", {})
+                if isinstance(error_detail, dict):
+                    error_message = f"API Error: {error_detail.get('message', 'Unknown error')}"
+                else:
+                    error_message = f"API Error: {error_detail}"
+            return error_message
             
     except requests.exceptions.HTTPError as e:
         print(f"HTTP Error: {str(e)}")
         if hasattr(e, 'response'):
             print(f"Response content: {e.response.text}")
-        if e.response.status_code == 429:
+        if hasattr(e, 'response') and e.response.status_code == 429:
             return "Daily quota exceeded. Please try again tomorrow."
-        return DEFAULT_EXAMPLES["generic_crop"]
+        return f"API Error: {str(e)}"
     except requests.exceptions.Timeout:
         print("Request timed out")
-        return "The AI service is experiencing high demand. Here's some general advice based on your conditions:\n\n" + DEFAULT_EXAMPLES["generic_crop"]
+        return "The AI service is taking longer than expected to respond. Please try again with a simpler question."
     except requests.exceptions.ConnectionError:
         print("Connection error")
-        return DEFAULT_EXAMPLES["generic_crop"]
+        return "Connection error: Unable to reach the AI service. Please check your internet connection and try again."
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
-        return DEFAULT_EXAMPLES["generic_crop"]
+        traceback.print_exc()
+        return f"Error: {str(e)}"
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', welcome_message=WELCOME_MESSAGE)
 
 @app.route('/api/setup', methods=['POST'])
 def setup():
@@ -265,71 +320,39 @@ def setup():
 
 @app.route('/api/ask', methods=['POST'])
 def ask():
-    global request_count
-    
-    if request_count >= 50:
-        return jsonify({
-            'success': False,
-            'message': 'Daily API limit exceeded (50/50 requests used)'
-        }), 429
-        
+    """API endpoint to ask questions to the AI"""
     try:
+        # Get request data
         data = request.json
         user_question = data.get('question', '')
+        crop_info = data.get('crop_info', None)
         
+        # Check if question is empty
         if not user_question:
             return jsonify({
                 'success': False,
                 'message': 'No question provided'
             }), 400
         
-        # Generate sensor data or use provided data
+        # Get chat history from session
+        chat_history = session.get('chat_history', [])
+        
+        # Get or generate sensor data
         sensor_data = data.get('sensor_data', simulate_iot_data())
         
-        # Get crop info from session or request
-        crop_info = {}
-        try:
-            crop_info = session.get('crop_info', {})
-        except:
-            # Session might not be available
-            pass
-            
-        if data.get('crop_info'):
-            crop_info = data.get('crop_info')
-            try:
-                session['crop_info'] = crop_info
-            except:
-                pass
-        
-        # Get chat history from session
-        chat_history = []
-        try:
-            chat_history = session.get('chat_history', [])
-        except:
-            pass
-        
-        # Add user question to chat history
-        chat_history.append({"role": "user", "content": user_question})
-        
-        # Keep history limited to last 4 exchanges
-        if len(chat_history) > 4:
-            chat_history = chat_history[-4:]
-            
-        # Store back in session
-        try:
-            session['chat_history'] = chat_history
-        except:
-            pass
-        
         # Get response from AI
-        response = ask_deepseek(user_question, sensor_data, crop_info, chat_history)
+        response = ask_ai(user_question, sensor_data, crop_info, chat_history)
         
         # Add response to chat history
+        chat_history.append({"role": "user", "content": user_question})
         chat_history.append({"role": "assistant", "content": response})
-        try:
-            session['chat_history'] = chat_history
-        except:
-            pass
+        
+        # Keep only the last 10 messages to avoid context getting too large
+        if len(chat_history) > 10:
+            chat_history = chat_history[-10:]
+        
+        # Save chat history to session
+        session['chat_history'] = chat_history
         
         return jsonify({
             'success': True,
@@ -338,17 +361,37 @@ def ask():
             'sensor_data': sensor_data
         })
     except Exception as e:
-        print(f"Error in /api/ask: {str(e)}")
+        print(f"Error processing request: {str(e)}")
+        traceback.print_exc()
         return jsonify({
             'success': False,
-            'message': 'An error occurred processing your request',
-            'error': str(e)
+            'message': f'Error: {str(e)}'
         }), 500
 
 @app.route('/api/sensor-data', methods=['GET'])
 def get_sensor_data():
     sensor_data = simulate_iot_data()
     return jsonify(sensor_data)
+
+@app.route('/api/chat-history', methods=['GET'])
+def get_chat_history():
+    """Get the current chat history and crop info for persistence"""
+    try:
+        chat_history = session.get('chat_history', [])
+        crop_info = session.get('crop_info', {})
+        
+        return jsonify({
+            'success': True,
+            'chat_history': chat_history,
+            'crop_info': crop_info
+        })
+    except Exception as e:
+        print(f"Error in /api/chat-history: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Unable to retrieve chat history',
+            'error': str(e)
+        }), 500
 
 @app.route('/api/reset', methods=['POST'])
 def reset_session():
@@ -362,5 +405,11 @@ def reset_session():
     })
 
 if __name__ == '__main__':
+    # Print API key for debugging (first few chars)
+    safe_api_key = API_KEY[:8] + "..." if API_KEY else "Not set"
+    print(f"Starting with API key: {safe_api_key}")
+    print(f"API URL: {API_URL}")
+    print(f"Model: {MODEL}")
+    
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port) 

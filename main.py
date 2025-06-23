@@ -11,9 +11,38 @@ import requests
 load_dotenv()
 
 # OpenRouter API configuration
-API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+API_KEY = os.getenv("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "anthropic/claude-3-sonnet-20240229"  # Amazon Bedrock model via OpenRouter
+
+def get_api_key():
+    """Get API key from environment or prompt user"""
+    global API_KEY
+    if API_KEY:
+        return API_KEY
+    
+    # Prompt user for API key
+    print("\n===== OpenRouter API Key Required =====")
+    print("To use AgriGuardian, you need an OpenRouter API key with access to Amazon Bedrock models.")
+    print("Get your key at: https://openrouter.ai/keys")
+    api_key = input("Enter your OpenRouter API key: ").strip()
+    
+    if api_key:
+        # Save to environment variable for current session
+        API_KEY = api_key
+        os.environ["OPENROUTER_API_KEY"] = api_key
+        
+        # Ask if user wants to save to .env file
+        save_to_env = input("Save this API key to .env file for future use? (y/n): ").strip().lower()
+        if save_to_env == 'y':
+            try:
+                with open('.env', 'w') as f:
+                    f.write(f"OPENROUTER_API_KEY={api_key}\n")
+                print("API key saved to .env file.")
+            except Exception as e:
+                print(f"Error saving API key to .env file: {e}")
+    
+    return API_KEY
 
 # Default examples for common crop questions
 DEFAULT_EXAMPLES = {
@@ -214,8 +243,14 @@ GOOD ANSWER: "With your current soil moisture at 45% and consistent rainfall of 
     
     return system_prompt, user_prompt
 
-def ask_deepseek(user_question, sensor_data=None, crop_info=None, history=None, timeout=30):
-    """Send a prompt to the DeepSeek model via OpenRouter API"""
+def ask_ai(user_question, sensor_data=None, crop_info=None, history=None, timeout=60):
+    """Send a prompt to the AI model via OpenRouter API"""
+    
+    # Ensure we have an API key
+    api_key = get_api_key()
+    if not api_key:
+        print("Error: No API key provided. Please restart and enter your OpenRouter API key.")
+        sys.exit(1)
     
     if sensor_data is None:
         sensor_data = simulate_iot_data()
@@ -223,7 +258,7 @@ def ask_deepseek(user_question, sensor_data=None, crop_info=None, history=None, 
     system_prompt, user_prompt = construct_prompt(user_question, sensor_data, crop_info, history)
     
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     
@@ -248,33 +283,23 @@ def ask_deepseek(user_question, sensor_data=None, crop_info=None, history=None, 
         response.raise_for_status()  # Raise exception for HTTP errors
         
         result = response.json()
+        
         if "choices" in result and len(result["choices"]) > 0:
-            response_text = result["choices"][0]["message"]["content"].strip()
-            
-            # Check if response is too generic
-            generic_phrases = ["monitor your crops closely", "provide more details", "for more specific advice", 
-                              "I need more information", "provide details about your crop"]
-            if any(phrase in response_text.lower() for phrase in generic_phrases) and len(response_text) < 200:
-                # Return default example based on crop type or question
-                if "tomato" in user_question.lower() and ("yellow" in user_question.lower() or "leaves" in user_question.lower()):
-                    return DEFAULT_EXAMPLES["tomato_yellowing"]
-                elif "water" in user_question.lower() or "irrigation" in user_question.lower():
-                    return DEFAULT_EXAMPLES["water_frequency"]
-                elif "pest" in user_question.lower() or "aphid" in user_question.lower() or "insect" in user_question.lower():
-                    return DEFAULT_EXAMPLES["pest_control"]
-            
-            return response_text
+            return result["choices"][0]["message"]["content"].strip()
         else:
-            return "Error: Unexpected response format from API."
+            return "Error: Unexpected response format from the AI service."
             
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 429:
-            return "Daily quota exceeded. Please try again tomorrow."
-        return f"API Error: {str(e)}"
-    except requests.exceptions.Timeout:
-        return "Request timed out. The AI service may be experiencing high demand. Please try again."
+        if e.response.status_code == 401:
+            return "Error: Invalid API key. Please check your OpenRouter API key and try again."
+        elif e.response.status_code == 429:
+            return "Error: API rate limit exceeded. Please try again later."
+        else:
+            return f"Error: HTTP error occurred: {str(e)}"
     except requests.exceptions.ConnectionError:
-        return "Connection error. Please check your internet connection and try again."
+        return "Error: Failed to connect to the API service. Please check your internet connection."
+    except requests.exceptions.Timeout:
+        return "Error: Request timed out. The AI service is taking too long to respond."
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -337,8 +362,8 @@ def main():
         print("\n⏳ Consulting agricultural knowledge... Please wait...")
         
         try:
-            # Send question to DeepSeek model
-            response = ask_deepseek(user_input, sensor_data, crop_info, chat_history)
+            # Send question to AI model
+            response = ask_ai(user_input, sensor_data, crop_info, chat_history)
             
             # Add assistant response to chat history
             chat_history.append({"role": "assistant", "content": response})

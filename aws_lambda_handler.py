@@ -9,7 +9,7 @@ from urllib.parse import parse_qs
 # OpenRouter API configuration
 API_KEY = os.environ.get("OPENROUTER_API_KEY")
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "deepseek/deepseek-r1-0528:free"
+MODEL = "anthropic/claude-3-sonnet-20240229"  # Amazon Bedrock model via OpenRouter
 
 # Initialize AWS clients
 sns = boto3.client('sns')
@@ -71,8 +71,12 @@ def construct_prompt(user_question, sensor_data, farmer_info=None):
     
     return system_prompt, user_prompt
 
-def ask_deepseek(user_question, sensor_data, farmer_info=None):
-    """Send a prompt to the DeepSeek model via OpenRouter API"""
+def ask_ai(user_question, sensor_data, farmer_info=None):
+    """Send a prompt to the AI model via OpenRouter API"""
+    # Check if API key is available
+    if not API_KEY:
+        return "Error: OpenRouter API key not configured. Please set the OPENROUTER_API_KEY environment variable."
+    
     system_prompt, user_prompt = construct_prompt(user_question, sensor_data, farmer_info)
     
     headers = {
@@ -162,8 +166,8 @@ def lambda_handler(event, context):
         # Get or simulate IoT data
         sensor_data = simulate_iot_data(phone_number)
         
-        # Process the message with DeepSeek
-        ai_response = ask_deepseek(message_body, sensor_data, farmer_info)
+        # Process the message with AI model
+        ai_response = ask_ai(message_body, sensor_data, farmer_info)
         
         # Record this interaction
         record_interaction(phone_number, message_body, ai_response)

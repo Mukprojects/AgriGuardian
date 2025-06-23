@@ -1,109 +1,114 @@
-# 🌱 AgriGuardian - AI Assistant for Farmers
+# AgriGuardian: AI-Powered Agricultural Assistant
 
-AgriGuardian is an AI-powered assistant designed to help farmers get real-time guidance on weather, pests, crop care, and other agricultural concerns, especially in low-connectivity zones.
+AgriGuardian is an intelligent assistant for farmers that leverages AI to provide personalized agricultural advice based on environmental conditions, crop information, and farmer queries.
 
 ## Features
 
-- 💬 SMS-style interface for farmer questions (simulated in terminal)
-- 🔌 Simulated IoT sensor data (temperature, humidity, soil moisture, etc.)
-- 🧠 AI-powered responses using DeepSeek AI model via OpenRouter API
-- 🌐 Works efficiently with limited connectivity (50 API calls per day limit)
-- 🖥️ Multiple interfaces: CLI, Web UI (Flask), and Streamlit
+- **Smart Agricultural Advice**: Get personalized recommendations based on real-time environmental conditions
+- **Multi-Interface Access**: Access via web browser, SMS (planned), or command line
+- **IoT Sensor Integration**: Uses real-time sensor data (temperature, humidity, soil moisture, etc.)
+- **Crop-Specific Guidance**: Tailors advice to your specific crops and growth stages
+- **Interactive Chat Interface**: Natural conversation with an AI agricultural expert
 
-## Setup Instructions
+## Getting Started
+
+### Prerequisites
+
+- Python 3.7+
+- OpenRouter API key with access to Amazon Bedrock models (Claude 3 Sonnet)
+
+### Installation
 
 1. Clone this repository:
-```
-git clone https://github.com/yourusername/AgriGuardian.git
+```bash
+git clone https://github.com/Mukprojects/AgriGuardian.git
 cd AgriGuardian
 ```
 
-2. Install required dependencies:
-```
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the root directory and add your OpenRouter API key:
-```
-OPENROUTER_API_KEY=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
-```
+3. API Key Setup:
+   - You need an OpenRouter API key with access to Amazon Bedrock models
+   - Get your API key at: https://openrouter.ai/keys
+   - When you run the application for the first time, you'll be prompted to enter your API key
+   - You can choose to save the key to a `.env` file for future use
 
-## Running Different Interfaces
+### Running the Application
 
-### Command Line Interface
-```
-python main.py
-```
+#### Web Interface
 
-### Streamlit UI
-```
-streamlit run app.py
-```
-
-### Flask Web Server
-```
+Start the web server:
+```bash
 python web_server.py
 ```
 
-## Deployment to AWS (Serverless)
+When prompted, enter your OpenRouter API key. Then open your browser and navigate to `http://localhost:5000`
 
-AgriGuardian can be deployed as a serverless application using AWS Lambda, API Gateway, SNS, and DynamoDB:
+#### Command Line Interface
 
-1. Install the Serverless Framework:
-```
-npm install -g serverless
-```
-
-2. Configure AWS credentials:
-```
-serverless config credentials --provider aws --key YOUR_ACCESS_KEY --secret YOUR_SECRET_KEY
+Run the CLI version:
+```bash
+python main.py
 ```
 
-3. Deploy the application:
-```
-serverless deploy
-```
+When prompted, enter your OpenRouter API key.
 
 ## Usage
 
-1. When prompted, type your agricultural question as if you were sending an SMS
-2. The system will simulate IoT sensor data for farm conditions
-3. AgriGuardian will provide tailored advice based on your question and the sensor data
-4. To exit, type "exit", "quit", or "q"
+### Web Interface
 
-## System Architecture
+1. Upon opening the web interface, you'll be prompted to enter your crop information
+2. Input details about your crops, growth stage, and any issues you're experiencing
+3. Ask questions in the chat interface about your agricultural concerns
+4. Receive detailed, actionable advice based on simulated environmental conditions
 
-The AgriGuardian system consists of:
+### Command Line Interface
 
-1. **Frontend Interfaces**:
-   - Command-line interface (main.py)
-   - Streamlit web app (app.py)
-   - Flask web server (web_server.py)
-   - HTML/JS web client (templates/index.html)
+1. Run `python main.py`
+2. Enter your OpenRouter API key when prompted
+3. The CLI will simulate sensor data and ask for your query
+4. Receive detailed agricultural advice from the AI
 
-2. **Backend Components**:
-   - OpenRouter API client for AI processing
-   - IoT sensor data simulator
-   - AWS Lambda handlers for serverless deployment
-   - DynamoDB for user data storage
+## Testing the API Connection
 
-## API Usage Notes
+You can test your API key and connection with:
+```bash
+python test_api.py
+```
 
-- The free tier of OpenRouter API with deepseek/deepseek-r1-0528:free has a limit of 50 requests per day
-- The application displays your current usage count during the session
+This will verify that your OpenRouter API key is working correctly with the Amazon Bedrock model.
 
-## Example Questions
+## API Limits
 
-- "Why are my tomato leaves turning yellow?"
-- "How often should I water my corn with the current soil moisture?"
-- "What's the best time to plant wheat with these conditions?"
-- "Is my field ready for harvesting wheat?"
-- "How can I control aphids on my cabbage plants naturally?"
+- The system has a default limit of 50 API requests per day to control costs
+- This can be adjusted in the code if needed
+- Be aware of your OpenRouter API usage limits
+
+## Project Structure
+
+- `web_server.py`: Flask web application with chat interface
+- `main.py`: Command line interface
+- `api.py`: API endpoint definitions for serverless deployment
+- `aws_lambda_handler.py`: AWS Lambda integration
+- `templates/`: HTML templates for web interface
+- `requirements.txt`: Python dependencies
 
 ## Future Enhancements
 
-- Real SMS integration using AWS SNS/Lambda
-- Actual IoT sensor data integration
-- Historical data tracking for better recommendations
-- Multi-language support for global farmers
-- Mobile app for farmers with smartphones 
+- SMS integration for farmers without internet access
+- Actual IoT sensor integration (currently simulated)
+- Historical data analysis for trend-based recommendations
+- Offline capabilities for remote areas
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+- Amazon Bedrock AI models used for agricultural knowledge
+- OpenRouter for API connectivity
+- Flask and Bootstrap for the web interface 
