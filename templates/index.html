@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriGuardian - AI Farming Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            padding-top: 1rem;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem 0;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .chat-area {
+            height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            background-color: #ffffff;
+            border-radius: 10px;
+        }
+        .sensor-card {
+            background-color: #e8f5e9;
+            border-left: 5px solid #4CAF50;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+            max-width: 80%;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+            max-width: 80%;
+        }
+        .form-control:focus, .btn:focus {
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+            border-color: #4CAF50;
+        }
+        .btn-primary {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+        }
+        .btn-primary:hover {
+            background-color: #388e3c;
+            border-color: #388e3c;
+        }
+        .sensor-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .chart-container {
+            height: 200px;
+            width: 100%;
+        }
+        .logo {
+            max-height: 60px;
+        }
+        .farmer-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #FFC107;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .assistant-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .message-container {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        .message-content {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header text-center">
+            <h1><img src="https://img.icons8.com/color/48/000000/farm.png" alt="Farm Icon" class="logo"> AgriGuardian</h1>
+            <p class="lead">AI-powered assistance for farmers</p>
+        </div>
+
+        <div class="row">
+            <!-- Main Chat Column -->
+            <div class="col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">💬 Chat with AgriGuardian</h5>
+                    </div>
+                    <div class="card-body chat-area" id="chatArea">
+                        <div class="message-container">
+                            <div class="assistant-avatar">AG</div>
+                            <div class="message-content">
+                                <div class="bot-message">
+                                    <p>Welcome to AgriGuardian! I'm your AI farming assistant. How can I help with your farm today?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <form id="chatForm" class="d-flex">
+                            <input type="text" id="userInput" class="form-control me-2" placeholder="Ask a farming question..." required>
+                            <button type="submit" class="btn btn-primary">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Data Column -->
+            <div class="col-lg-4">
+                <div class="card sensor-card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📊 Current Farm Conditions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p>🌡️ Temperature</p>
+                                <p class="sensor-value" id="temperature">32.5°C</p>
+                            </div>
+                            <div class="col-6">
+                                <p>💧 Humidity</p>
+                                <p class="sensor-value" id="humidity">65.2%</p>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p>🌱 Soil Moisture</p>
+                                <p class="sensor-value" id="soil_moisture">42.7%</p>
+                            </div>
+                            <div class="col-6">
+                                <p>☀️ Light Level</p>
+                                <p class="sensor-value" id="light_level">8250 Lux</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p>🌧️ Rainfall (24h)</p>
+                                <p class="sensor-value" id="rainfall">12.3 mm</p>
+                            </div>
+                            <div class="col-6">
+                                <button id="refreshSensors" class="btn btn-sm btn-outline-success mt-4">Refresh Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Card -->
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📈 24-Hour Trends</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="trendChart" class="chart-container"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">ℹ️ About AgriGuardian</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>AgriGuardian is an AI-powered assistant designed to help farmers with real-time guidance on weather, pests, crop care, and other agricultural concerns, especially in low-connectivity zones.</p>
+                        <p>In a real deployment scenario, this service would integrate with:</p>
+                        <ul>
+                            <li>SMS messaging via AWS SNS/Lambda for farmers with limited connectivity</li>
+                            <li>Real IoT sensors placed in farm fields for accurate data</li>
+                            <li>Weather forecasting APIs for predictive guidance</li>
+                            <li>Historical farming data for personalized advice</li>
+                        </ul>
+                        <p><strong>Note:</strong> This demo uses the OpenRouter API with DeepSeek's AI model and has a limit of 50 requests per day.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-4 text-center text-muted">
+            <p>&copy; 2023 AgriGuardian - AI for Sustainable Farming</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize request counter
+            let requestCount = 0;
+            const maxRequests = 50;
+
+            // Initialize chart
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            const chartLabels = Array.from({length: 24}, (_, i) => `${23-i}h ago`).reverse();
+            
+            const temperatureData = Array.from({length: 24}, () => Math.round((Math.random() * 20 + 20) * 10) / 10);
+            const humidityData = Array.from({length: 24}, () => Math.round((Math.random() * 60 + 30) * 10) / 10);
+            
+            const trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: temperatureData,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Humidity (%)',
+                            data: humidityData,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // Function to simulate IoT data
+            function simulateIoTData() {
+                return {
+                    "temperature": Math.round((Math.random() * 20 + 20) * 10) / 10,  // 20-40°C
+                    "humidity": Math.round((Math.random() * 60 + 30) * 10) / 10,     // 30-90%
+                    "soil_moisture": Math.round((Math.random() * 50 + 10) * 10) / 10,// 10-60%
+                    "light_level": Math.round(Math.random() * 8000 + 2000),         // 2000-10000 Lux
+                    "rainfall_last_24h": Math.round((Math.random() * 30) * 10) / 10  // 0-30mm
+                };
+            }
+
+            // Initialize sensor data and crop information
+            let sensorData = simulateIoTData();
+            let cropInfo = {
+                crops: "various crops",
+                stage: "unknown", 
+                issues: null
+            };
+
+            // Update sensor displays with simulated data
+            function updateSensorDisplays(data) {
+                document.getElementById('temperature').innerText = data.temperature + '°C';
+                document.getElementById('humidity').innerText = data.humidity + '%';
+                document.getElementById('soil_moisture').innerText = data.soil_moisture + '%';
+                document.getElementById('light_level').innerText = data.light_level + ' Lux';
+                document.getElementById('rainfall').innerText = data.rainfall_last_24h + ' mm';
+            }
+
+            // Refresh sensor data button
+            document.getElementById('refreshSensors').addEventListener('click', function() {
+                sensorData = simulateIoTData();
+                updateSensorDisplays(sensorData);
+                
+                // Update the chart with new data point
+                trendChart.data.datasets[0].data.shift();
+                trendChart.data.datasets[0].data.push(sensorData.temperature);
+                trendChart.data.datasets[1].data.shift();
+                trendChart.data.datasets[1].data.push(sensorData.humidity);
+                trendChart.update();
+            });
+
+            // Modified chat form submission
+            document.getElementById('chatForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const userInput = document.getElementById('userInput');
+                const message = userInput.value.trim();
+                
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessageToChat('user', message);
+                userInput.value = '';
+                
+                if (requestCount >= maxRequests) {
+                    addMessageToChat('bot', "I'm sorry, but we've reached the daily limit of API requests (50/50). Please try again tomorrow.");
+                    return;
+                }
+                
+                // Show thinking indicator
+                const thinkingId = addThinkingIndicator();
+                
+                // Call the API with crop information
+                callAgriGuardianAPI(message, sensorData, cropInfo, thinkingId);
+            });
+            
+            // Add a setup form to the page
+            function setupCropForm() {
+                const setupHtml = `
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">🌱 Farm & Crop Setup</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="cropSetupForm">
+                            <div class="mb-3">
+                                <label for="cropType" class="form-label">What are your main crops?</label>
+                                <input type="text" class="form-control" id="cropType" placeholder="e.g., tomatoes, wheat, corn, potatoes">
+                            </div>
+                            <div class="mb-3">
+                                <label for="growthStage" class="form-label">Growth Stage</label>
+                                <select class="form-select" id="growthStage">
+                                    <option value="" selected>Select growth stage...</option>
+                                    <option value="Planting/Seeding">Planting/Seeding</option>
+                                    <option value="Sprouting/Emergence">Sprouting/Emergence</option>
+                                    <option value="Vegetative Growth">Vegetative Growth</option>
+                                    <option value="Flowering">Flowering</option>
+                                    <option value="Fruiting/Grain Development">Fruiting/Grain Development</option>
+                                    <option value="Harvesting">Harvesting</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="issuesInput" class="form-label">Any specific issues you're experiencing?</label>
+                                <input type="text" class="form-control" id="issuesInput" placeholder="e.g., yellow leaves, pest damage, etc. (or leave blank)">
+                            </div>
+                            <button type="submit" class="btn btn-success">Save Crop Information</button>
+                        </form>
+                    </div>
+                </div>
+                `;
+                
+                // Insert the form before the chat area
+                const chatArea = document.querySelector('.chat-area').parentNode.parentNode;
+                const setupForm = document.createElement('div');
+                setupForm.innerHTML = setupHtml;
+                chatArea.parentNode.insertBefore(setupForm, chatArea);
+                
+                // Add form submission handler
+                document.getElementById('cropSetupForm').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    cropInfo = {
+                        crops: document.getElementById('cropType').value || "various crops",
+                        stage: document.getElementById('growthStage').value || "unknown",
+                        issues: document.getElementById('issuesInput').value || null
+                    };
+                    
+                    // Display message
+                    addMessageToChat('bot', `Thank you! I'll tailor my advice for ${cropInfo.crops} at the ${cropInfo.stage} stage.`);
+                    
+                    // Hide the form
+                    this.parentNode.parentNode.style.display = 'none';
+                });
+            }
+
+            // Function to call the API
+            function callAgriGuardianAPI(message, sensorData, cropInfo, thinkingId) {
+                                    // In a real app, this would call your backend API
+                // For demo, we'll use the actual fetch API to call our backend
+                
+                setTimeout(() => {
+                    fetch('/api/ask', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            question: message,
+                            sensor_data: sensorData,
+                            crop_info: cropInfo
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Remove thinking indicator
+                        removeThinkingIndicator(thinkingId);
+                        
+                        if (data.success) {
+                            // Update sensor data
+                            sensorData = data.sensor_data;
+                            updateSensorDisplays(sensorData);
+                            
+                            // Display response
+                            addMessageToChat('bot', data.response);
+                            
+                            // Update request count
+                            requestCount = data.request_count;
+                        } else {
+                            // Handle error response
+                            let errorMsg = data.message || data.error || "Sorry, I couldn't process your question. Please try again.";
+                            addMessageToChat('bot', errorMsg);
+                            console.error('API Error:', data);
+                        }
+                    })
+                    .catch(error => {
+                        // Remove thinking indicator
+                        removeThinkingIndicator(thinkingId);
+                        
+                        // Display error
+                        addMessageToChat('bot', "Sorry, there was a network error processing your request. Please check your connection and try again.");
+                        console.error('Fetch Error:', error);
+                        
+                        // Try to recover with default response
+                        setTimeout(() => {
+                            let defaultResponse = "Based on your question about crops, here are some general tips:\n\n" + 
+                                "1. Ensure proper watering based on current soil moisture levels\n" +
+                                "2. Monitor temperature and provide shade if needed\n" +
+                                "3. Apply appropriate fertilizers for your specific crop stage\n\n" +
+                                "For more specific advice, please try again or provide more details about your crops.";
+                            
+                            if (message.toLowerCase().includes('potato')) {
+                                defaultResponse = "For potato growing issues, check:\n\n" + 
+                                    "1. Soil moisture - potatoes need consistent moisture\n" +
+                                    "2. Temperature - ideal range is 15-20°C\n" +
+                                    "3. Hilling - ensure proper hilling for tuber development\n" +
+                                    "4. Fertilization - avoid excess nitrogen\n\n" +
+                                    "If leaves are yellowing, check for blight or overwatering.";
+                            }
+                            
+                            addMessageToChat('bot', defaultResponse);
+                        }, 1000);
+                    });
+                }, 1000);
+            }
+            
+            // Add message to chat area
+            function addMessageToChat(sender, message) {
+                const chatArea = document.getElementById('chatArea');
+                
+                const messageContainer = document.createElement('div');
+                messageContainer.className = 'message-container';
+                
+                const avatar = document.createElement('div');
+                if (sender === 'user') {
+                    avatar.className = 'farmer-avatar';
+                    avatar.textContent = 'F';
+                    messageContainer.style.flexDirection = 'row-reverse';
+                } else {
+                    avatar.className = 'assistant-avatar';
+                    avatar.textContent = 'AG';
+                }
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = sender === 'user' ? 'user-message' : 'bot-message';
+                
+                const messagePara = document.createElement('p');
+                messagePara.textContent = message;
+                
+                messageDiv.appendChild(messagePara);
+                messageContent.appendChild(messageDiv);
+                messageContainer.appendChild(avatar);
+                messageContainer.appendChild(messageContent);
+                chatArea.appendChild(messageContainer);
+                
+                // Scroll to bottom
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }
+            
+            // Add thinking indicator
+            function addThinkingIndicator() {
+                const chatArea = document.getElementById('chatArea');
+                const thinkingId = 'thinking-' + Date.now();
+                
+                const messageContainer = document.createElement('div');
+                messageContainer.className = 'message-container';
+                messageContainer.id = thinkingId;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'assistant-avatar';
+                avatar.textContent = 'AG';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'bot-message';
+                
+                const messagePara = document.createElement('p');
+                messagePara.innerHTML = '<em>Consulting agricultural knowledge...</em>';
+                
+                messageDiv.appendChild(messagePara);
+                messageContent.appendChild(messageDiv);
+                messageContainer.appendChild(avatar);
+                messageContainer.appendChild(messageContent);
+                chatArea.appendChild(messageContainer);
+                
+                chatArea.scrollTop = chatArea.scrollHeight;
+                
+                return thinkingId;
+            }
+            
+            // Remove thinking indicator
+            function removeThinkingIndicator(id) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.remove();
+                }
+            }
+            
+            // When the page loads, setup the crop form
+            setupCropForm();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,68 @@
+service: agriguardian
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: dev
+  region: us-east-1
+  environment:
+    OPENROUTER_API_KEY: ${env:OPENROUTER_API_KEY, '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'}
+    DYNAMODB_TABLE_NAME: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: !GetAtt AgriGuardianDynamoDBTable.Arn
+    - Effect: Allow
+      Action:
+        - sns:Publish
+      Resource: "*"
+
+functions:
+  smsHandler:
+    handler: aws_lambda_handler.lambda_handler
+    events:
+      - sns:
+          topicName: agriguardian-sms-received
+          displayName: "AgriGuardian SMS Received"
+      - http:
+          path: sms
+          method: post
+          cors: true
+
+  apiAsk:
+    handler: api.ask_handler
+    events:
+      - http:
+          path: api/ask
+          method: post
+          cors: true
+
+  iotSensorData:
+    handler: api.sensor_data_handler
+    events:
+      - http:
+          path: api/sensor-data
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    AgriGuardianDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: phone_number
+            AttributeType: S
+        KeySchema:
+          - AttributeName: phone_number
+            KeyType: HASH 
