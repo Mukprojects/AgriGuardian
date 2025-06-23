@@ -2,6 +2,8 @@
 
 AgriGuardian is an intelligent assistant for farmers that leverages AI to provide personalized agricultural advice based on environmental conditions, crop information, and farmer queries.
 
+![Image Alt](https://github.com/Mukprojects/AgriGuardian/blob/3faa04ef52cd90b40d88a1be60cc05c50e7aaa6d/Website.png)
+
 ## Features
 
 - **Smart Agricultural Advice**: Get personalized recommendations based on real-time environmental conditions
